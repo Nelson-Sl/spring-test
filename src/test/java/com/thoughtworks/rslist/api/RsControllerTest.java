@@ -6,6 +6,7 @@ import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.dto.VoteDto;
 import com.thoughtworks.rslist.repository.RsEventRepository;
+import com.thoughtworks.rslist.repository.TradeRepository;
 import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.repository.VoteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,9 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class RsControllerTest {
   @Autowired private MockMvc mockMvc;
+  @Autowired VoteRepository voteRepository;
   @Autowired UserRepository userRepository;
   @Autowired RsEventRepository rsEventRepository;
-  @Autowired VoteRepository voteRepository;
+  @Autowired TradeRepository tradeRepository;
   private UserDto userDto;
   ObjectMapper objectMapper = new ObjectMapper();
 
@@ -45,6 +47,7 @@ class RsControllerTest {
     voteRepository.deleteAll();
     rsEventRepository.deleteAll();
     userRepository.deleteAll();
+    tradeRepository.deleteAll();
     userDto =
         UserDto.builder()
             .voteNum(10)
@@ -204,7 +207,7 @@ class RsControllerTest {
     Trade trade = Trade.builder().amount(100).eventName("event name 3").keyWord("keyword").rank(1).build();
     String tradeString = objectMapper.writeValueAsString(trade);
 
-    mockMvc.perform(post("/rs/buy/1")
+    mockMvc.perform(post("/rs/buy/" + save.getId())
             .content(tradeString).contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
@@ -216,5 +219,32 @@ class RsControllerTest {
             .andExpect(jsonPath("$[1].keyword", is("keyword")))
             .andExpect(jsonPath("$[2].eventName", is("event name 1")))
             .andExpect(jsonPath("$[2].keyword", is("keyword")));
+  }
+
+  @Test
+  void shouldCantBuyEventsRankIfPriceIsLower() throws Exception {
+    UserDto save = userRepository.save(userDto);
+
+    RsEventDto rsEventDto1 = RsEventDto.builder().user(save).eventName("event name 1").keyword("keyword").voteNum(2)
+            .build();
+    rsEventDto1 = rsEventRepository.save(rsEventDto1);
+
+    RsEventDto rsEventDto2 = RsEventDto.builder().user(save).eventName("event name 2").keyword("keyword").voteNum(4)
+            .build();
+    rsEventDto2 = rsEventRepository.save(rsEventDto2);
+
+    Trade trade = Trade.builder().amount(100).eventName("event name 3").keyWord("keyword").rank(1).build();
+    String tradeString = objectMapper.writeValueAsString(trade);
+
+    mockMvc.perform(post("/rs/buy/" + save.getId())
+            .content(tradeString).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+    Trade trade2 = Trade.builder().amount(50).eventName("event name 4").keyWord("keyword").rank(1).build();
+    String tradeString2 = objectMapper.writeValueAsString(trade2);
+
+    mockMvc.perform(post("/rs/buy/" + save.getId())
+            .content(tradeString2).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
   }
 }

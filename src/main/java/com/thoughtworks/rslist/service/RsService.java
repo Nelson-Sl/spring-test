@@ -60,7 +60,7 @@ public class RsService {
 
   public void buy(Trade trade, int id) throws RsTradeFailureException, UserNotRegisterException {
     Optional<UserDto> eventBuyer = userRepository.findById(id);
-    if(isEventExistsInOtherRank(trade) || isTradeGotLowerPrice(trade,id)) {
+    if(isEventExistsInOtherRank(trade) || isTradeGotLowerPrice(trade)) {
       throw new RsTradeFailureException("Trade Fail.Your event might exists or your price is not high enough");
     }else if(!eventBuyer.isPresent()) {
       throw new UserNotRegisterException("Please register as a user");
@@ -79,8 +79,8 @@ public class RsService {
     renewRsEventRank();
   }
 
-  private boolean isTradeGotLowerPrice(Trade trade, int id) {
-    return tradeRepository.existsByRank(id)
+  private boolean isTradeGotLowerPrice(Trade trade) {
+    return tradeRepository.existsByRank(trade.getRank())
             && (trade.getAmount() < tradeRepository.findByRank(trade.getRank()).getAmount());
   }
 
