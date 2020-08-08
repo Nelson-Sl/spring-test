@@ -1,5 +1,6 @@
 package com.thoughtworks.rslist.repository;
 
+import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import org.springframework.data.repository.CrudRepository;
 

@@ -7,6 +7,8 @@ import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.exception.Error;
 import com.thoughtworks.rslist.exception.RequestNotValidException;
+import com.thoughtworks.rslist.exception.RsTradeFailureException;
+import com.thoughtworks.rslist.exception.UserNotRegisterException;
 import com.thoughtworks.rslist.repository.RsEventRepository;
 import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.service.RsService;
@@ -37,7 +39,7 @@ public class RsController {
   public ResponseEntity<List<RsEvent>> getRsEventListBetween(
       @RequestParam(required = false) Integer start, @RequestParam(required = false) Integer end) {
     List<RsEvent> rsEvents =
-        rsEventRepository.findAll().stream()
+        rsEventRepository.findAllOrderByRank().stream()
             .map(
                 item ->
                     RsEvent.builder()
@@ -96,14 +98,15 @@ public class RsController {
   }
 
   @PostMapping("/rs/buy/{id}")
-  public ResponseEntity buy(@PathVariable int id, @RequestBody Trade trade){
+  public ResponseEntity buy(@PathVariable int id, @RequestBody Trade trade) throws RsTradeFailureException,
+          UserNotRegisterException {
     rsService.buy(trade, id);
     return ResponseEntity.ok().build();
   }
 
 
-  @ExceptionHandler(RequestNotValidException.class)
-  public ResponseEntity<Error> handleRequestErrorHandler(RequestNotValidException e) {
+  @ExceptionHandler({RequestNotValidException.class, RsTradeFailureException.class, UserNotRegisterException.class})
+  public ResponseEntity<Error> handleRequestErrorHandler(Exception e) {
     Error error = new Error();
     error.setError(e.getMessage());
     return ResponseEntity.badRequest().body(error);

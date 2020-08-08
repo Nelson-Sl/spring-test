@@ -8,20 +8,21 @@ import lombok.NoArgsConstructor;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "rsEvent")
-public class RsEventDto {
-  @Id @GeneratedValue private int id;
-  private String eventName;
-  private String keyword;
-  private int voteNum;
-  private int rank;
-  @ManyToOne private UserDto user;
+@Table(name = "trade")
+public class TradeDto {
+    @Id
+    @GeneratedValue
+    private int id;
+    private double amount;
+    private int rank;
+    private String eventName;
+    private String keyWord;
 }

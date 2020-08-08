@@ -1,5 +1,7 @@
 package com.thoughtworks.rslist.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.dto.VoteDto;
@@ -36,6 +38,7 @@ class RsControllerTest {
   @Autowired RsEventRepository rsEventRepository;
   @Autowired VoteRepository voteRepository;
   private UserDto userDto;
+  ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() {
@@ -184,5 +187,34 @@ class RsControllerTest {
     List<VoteDto> voteDtos =  voteRepository.findAll();
     assertEquals(voteDtos.size(), 1);
     assertEquals(voteDtos.get(0).getNum(), 1);
+  }
+
+  @Test
+  void shouldBuyEventsRank() throws Exception {
+    UserDto save = userRepository.save(userDto);
+
+    RsEventDto rsEventDto1 = RsEventDto.builder().user(save).eventName("event name 1").keyword("keyword").voteNum(2)
+            .build();
+    rsEventDto1 = rsEventRepository.save(rsEventDto1);
+
+    RsEventDto rsEventDto2 = RsEventDto.builder().user(save).eventName("event name 2").keyword("keyword").voteNum(4)
+            .build();
+    rsEventDto2 = rsEventRepository.save(rsEventDto2);
+
+    Trade trade = Trade.builder().amount(100).eventName("event name 3").keyWord("keyword").rank(1).build();
+    String tradeString = objectMapper.writeValueAsString(trade);
+
+    mockMvc.perform(post("/rs/buy/1")
+            .content(tradeString).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+    mockMvc.perform(get("/rs/list"))
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].eventName", is("event name 3")))
+            .andExpect(jsonPath("$[0].keyword", is("keyword")))
+            .andExpect(jsonPath("$[1].eventName", is("event name 2")))
+            .andExpect(jsonPath("$[1].keyword", is("keyword")))
+            .andExpect(jsonPath("$[2].eventName", is("event name 1")))
+            .andExpect(jsonPath("$[2].keyword", is("keyword")));
   }
 }
