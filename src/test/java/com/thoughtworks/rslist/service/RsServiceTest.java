@@ -112,12 +112,11 @@ class RsServiceTest {
   void shouldTradeSuccessfully() throws RsTradeFailureException, UserNotRegisterException {
     UserDto user = UserDto.builder().userName("Nelson").age(23).gender("Male")
             .email("nelson@a.com").phone("11234567890").voteNum(10).build();
-    RsEventDto event = RsEventDto.builder().eventName("event1").keyword("无分类")
-            .user(user).voteNum(3).build();
-    rsEventRepository.save(event);
     int userId = user.getId();
     when(userRepository.findById(anyInt())).thenReturn(Optional.of(user));
     when(rsEventRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    when(tradeRepository.findByRank(anyInt())).thenReturn(Optional.empty());
+    when(tradeRepository.findByEventName(anyString())).thenReturn(Optional.empty());
     rsService.buy(trade,userId);
     verify(tradeRepository).save(
             TradeDto.builder().eventName("event2").keyWord("无分类")
@@ -126,5 +125,20 @@ class RsServiceTest {
             RsEventDto.builder().eventName("event2").keyword("无分类")
             .user(user).build());
     verify(tools).renewRsEventRank();
+  }
+
+  @Test
+  void shouldNotTradeEventsWhenUsersAreNotExists() {
+    UserDto user = UserDto.builder().id(1).userName("Nelson").age(23).gender("Male")
+            .email("nelson@a.com").phone("11234567890").voteNum(10).build();
+    int userId = user.getId();
+    when(userRepository.findById(anyInt())).thenReturn(Optional.empty());
+    when(rsEventRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    when(tradeRepository.findByRank(anyInt())).thenReturn(Optional.empty());
+    when(tradeRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    assertThrows(UserNotRegisterException.class,
+            () -> {
+              rsService.buy(trade,userId);
+            });
   }
 }

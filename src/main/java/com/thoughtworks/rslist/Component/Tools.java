@@ -24,8 +24,8 @@ public class Tools {
             rsEventRepository.deleteAll();
             int rank = 1;
             for(RsEventDto event: eventList) {
-                if(tradeRepository.existsByEventName(event.getEventName())) {
-                    event.setRank(tradeRepository.findByEventName(event.getEventName()).getRank());
+                if(tradeRepository.findByEventName(event.getEventName()).isPresent()) {
+                    event.setRank(tradeRepository.findByEventName(event.getEventName()).get().getRank());
                 }else {
                     rank = decideRank(rank);
                     event.setRank(rank);
@@ -37,7 +37,7 @@ public class Tools {
     }
 
     private int decideRank(int rank) {
-        if(tradeRepository.existsByRank(rank)){
+        if(tradeRepository.findByRank(rank).isPresent()){
             decideRank(++rank);
         }
         return rank;

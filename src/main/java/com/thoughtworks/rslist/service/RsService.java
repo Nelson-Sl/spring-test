@@ -65,7 +65,7 @@ public class RsService {
     }else if(!eventBuyer.isPresent()) {
       throw new UserNotRegisterException("Please register as a user");
     }
-    if(tradeRepository.existsByRank(trade.getRank())){
+    if(tradeRepository.findByRank(trade.getRank()).isPresent()){
       updateTradeEvent(trade);
     }
       addNewTradeEvent(trade);
@@ -80,17 +80,17 @@ public class RsService {
   }
 
   private boolean isTradeGotLowerPrice(Trade trade) {
-    return tradeRepository.existsByRank(trade.getRank())
-            && (trade.getAmount() < tradeRepository.findByRank(trade.getRank()).getAmount());
+    return tradeRepository.findByRank(trade.getRank()).isPresent()
+            && (trade.getAmount() < tradeRepository.findByRank(trade.getRank()).get().getAmount());
   }
 
   private boolean isEventExistsInOtherRank(Trade trade) {
-    return tradeRepository.existsByEventName(trade.getEventName())
-            && (tradeRepository.findByEventName(trade.getEventName()).getRank() != trade.getRank());
+    return tradeRepository.findByEventName(trade.getEventName()).isPresent()
+            && (tradeRepository.findByEventName(trade.getEventName()).get().getRank() != trade.getRank());
   }
 
   private void updateTradeEvent(Trade trade) {
-    TradeDto updateTrade = tradeRepository.findByRank(trade.getRank());
+    TradeDto updateTrade = tradeRepository.findByRank(trade.getRank()).get();
     updateTrade.setEventName(trade.getEventName());
     updateTrade.setAmount(trade.getAmount());
     updateTrade.setKeyWord(trade.getKeyWord());
