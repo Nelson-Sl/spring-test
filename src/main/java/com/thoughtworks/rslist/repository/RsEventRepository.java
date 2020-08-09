@@ -7,6 +7,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RsEventRepository extends CrudRepository<RsEventDto, Integer> {
   List<RsEventDto> findAll();
@@ -18,4 +19,6 @@ public interface RsEventRepository extends CrudRepository<RsEventDto, Integer> {
 
   @Query(value = "SELECT * FROM rs_event ORDER BY rank ASC",nativeQuery = true)
   List<RsEventDto> findAllOrderByRank();
+
+  Optional<RsEventDto> findByEventName(String eventName);
 }

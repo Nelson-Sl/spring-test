@@ -1,5 +1,6 @@
 package com.thoughtworks.rslist.service;
 
+import com.thoughtworks.rslist.Component.Tools;
 import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.domain.Vote;
 import com.thoughtworks.rslist.dto.RsEventDto;
@@ -12,11 +13,8 @@ import com.thoughtworks.rslist.repository.RsEventRepository;
 import com.thoughtworks.rslist.repository.TradeRepository;
 import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.repository.VoteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,13 +23,15 @@ public class RsService {
   final UserRepository userRepository;
   final VoteRepository voteRepository;
   final TradeRepository tradeRepository;
+  final Tools tools;
 
   public RsService(RsEventRepository rsEventRepository, UserRepository userRepository,
-                   VoteRepository voteRepository, TradeRepository tradeRepository) {
+                   VoteRepository voteRepository, TradeRepository tradeRepository, Tools tools) {
     this.rsEventRepository = rsEventRepository;
     this.userRepository = userRepository;
     this.voteRepository = voteRepository;
     this.tradeRepository = tradeRepository;
+    this.tools = tools;
   }
 
   public void vote(Vote vote, int rsEventId) {
@@ -65,18 +65,18 @@ public class RsService {
     }else if(!eventBuyer.isPresent()) {
       throw new UserNotRegisterException("Please register as a user");
     }
-    if(tradeRepository.existsById(id)){
+    if(tradeRepository.existsByRank(trade.getRank())){
       updateTradeEvent(trade);
     }
       addNewTradeEvent(trade);
-    if(!rsEventRepository.existsByEventName(trade.getEventName())) {
+    if(!rsEventRepository.findByEventName(trade.getEventName()).isPresent()) {
       RsEventDto newBoughtEvent = RsEventDto.builder().eventName(trade.getEventName())
               .keyword(trade.getKeyWord())
               .user(eventBuyer.get())
               .build();
       rsEventRepository.save(newBoughtEvent);
     }
-    renewRsEventRank();
+    tools.renewRsEventRank();
   }
 
   private boolean isTradeGotLowerPrice(Trade trade) {
@@ -103,31 +103,5 @@ public class RsService {
             .keyWord(trade.getKeyWord())
             .rank(trade.getRank()).build();
     tradeRepository.save(newTrade);
-  }
-
-  private void renewRsEventRank() {
-    List<RsEventDto> eventList = rsEventRepository.findAll();
-    if(eventList.size() > 1) {
-      eventList.sort((o1, o2) -> o2.getVoteNum() - o1.getVoteNum());
-      rsEventRepository.deleteAll();
-      int rank = 1;
-      for(RsEventDto event: eventList) {
-        if(tradeRepository.existsByEventName(event.getEventName())) {
-          event.setRank(tradeRepository.findByEventName(event.getEventName()).getRank());
-        }else {
-          rank = decideRank(rank);
-          event.setRank(rank);
-        }
-        rsEventRepository.save(event);
-        rank++;
-      }
-    }
-  }
-
-  private int decideRank(int rank) {
-    if(tradeRepository.existsByRank(rank)){
-      decideRank(++rank);
-    }
-    return rank;
   }
 }
