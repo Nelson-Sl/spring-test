@@ -141,4 +141,21 @@ class RsServiceTest {
               rsService.buy(trade,userId);
             });
   }
+
+  @Test
+  void shouldNotTradeEventsWhenTradePriceIsLower() {
+    UserDto user = UserDto.builder().id(1).userName("Nelson").age(23).gender("Male")
+            .email("nelson@a.com").phone("11234567890").voteNum(10).build();
+    TradeDto currentTrade = TradeDto.builder().amount(200).eventName("event1").keyWord("无分类")
+            .rank(1).build();
+    int userId = user.getId();
+    when(userRepository.findById(anyInt())).thenReturn(Optional.of(user));
+    when(rsEventRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    when(tradeRepository.findByRank(anyInt())).thenReturn(Optional.of(currentTrade));
+    when(tradeRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    assertThrows(RsTradeFailureException.class,
+            () -> {
+              rsService.buy(trade,userId);
+            });
+  }
 }
