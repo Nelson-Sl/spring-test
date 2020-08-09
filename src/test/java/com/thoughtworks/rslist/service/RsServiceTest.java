@@ -158,4 +158,21 @@ class RsServiceTest {
               rsService.buy(trade,userId);
             });
   }
+
+  @Test
+  void shouldNotTradeEventsWhenEventExistsInOtherRank() {
+    UserDto user = UserDto.builder().id(1).userName("Nelson").age(23).gender("Male")
+            .email("nelson@a.com").phone("11234567890").voteNum(10).build();
+    TradeDto currentTrade = TradeDto.builder().amount(500).eventName("event2").keyWord("无分类")
+            .rank(2).build();
+    int userId = user.getId();
+    when(userRepository.findById(anyInt())).thenReturn(Optional.of(user));
+    when(rsEventRepository.findByEventName(anyString())).thenReturn(Optional.empty());
+    when(tradeRepository.findByRank(anyInt())).thenReturn(Optional.empty());
+    when(tradeRepository.findByEventName(anyString())).thenReturn(Optional.of(currentTrade));
+    assertThrows(RsTradeFailureException.class,
+            () -> {
+              rsService.buy(trade,userId);
+            });
+  }
 }
